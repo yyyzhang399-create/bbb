@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆宫殿 · Memory Palace</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --gold: #c9a84c;
+    --rust: #b5451b;
+    --sage: #5a7a6a;
+    --mist: #8b9eb7;
+    --en-color: #7eb8d4;
+    --zh-color: #c9a84c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--ink); color:var(--paper);
+    min-height:100vh; overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(126,184,212,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 80%, rgba(90,122,106,0.07) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.018) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.018) 40px);
+    pointer-events:none; z-index:0;
+  }
+  .app { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:20px; }
+
+  /* ── Header ── */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:24px 0 28px; border-bottom:1px solid rgba(201,168,76,0.25); margin-bottom:24px;
+  }
+  .logo { display:flex; align-items:baseline; gap:10px; }
+  .logo-zh { font-family:'Noto Serif SC',serif; font-size:22px; color:var(--gold); font-weight:600; letter-spacing:4px; }
+  .logo-en { font-family:'Playfair Display',serif; font-size:12px; color:rgba(201,168,76,0.5); letter-spacing:3px; text-transform:uppercase; }
+  .header-stats { display:flex; gap:16px; flex-wrap:wrap; }
+  .stat { text-align:center; min-width:50px; }
+  .stat-num { font-size:20px; font-weight:600; color:var(--gold); display:block; }
+  .stat-label { font-size:9px; color:var(--mist); text-transform:uppercase; letter-spacing:1px; }
+
+  /* ── Nav ── */
+  nav { display:flex; gap:4px; margin-bottom:24px; background:rgba(255,255,255,0.04); padding:4px; border-radius:10px; }
+  .nav-btn {
+    flex:1; padding:9px 6px; background:transparent; border:none; cursor:pointer;
+    color:var(--mist); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+    border-radius:7px; transition:all 0.2s; white-space:nowrap;
+  }
+  .nav-btn.active { background:var(--gold); color:var(--ink); }
+  .nav-btn:hover:not(.active) { background:rgba(255,255,255,0.08); color:var(--paper); }
+
+  /* ── Mode tabs ── */
+  .mode-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .mode-tab {
+    flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer;
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600;
+    transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .mode-tab-en {
+    background:rgba(126,184,212,0.12); color:var(--en-color); border:1px solid rgba(126,184,212,0.25);
+  }
+  .mode-tab-en.active { background:rgba(126,184,212,0.25); border-color:var(--en-color); }
+  .mode-tab-zh {
+    background:rgba(201,168,76,0.1); color:var(--zh-color); border:1px solid rgba(201,168,76,0.2);
+  }
+  .mode-tab-zh.active { background:rgba(201,168,76,0.22); border-color:var(--zh-color); }
+  .mode-badge {
+    display:inline-block; font-size:10px; padding:1px 6px; border-radius:10px; font-weight:700;
+  }
+  .badge-en { background:rgba(126,184,212,0.2); color:var(--en-color); }
+  .badge-zh { background:rgba(201,168,76,0.2); color:var(--zh-color); }
+
+  /* ── Panels ── */
+  .panel { display:none; animation:fadeIn 0.25s ease; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── Cards ── */
+  .card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(201,168,76,0.14);
+    border-radius:12px; padding:22px; margin-bottom:18px;
+  }
+  .section-title {
+    font-family:'Playfair Display',serif; font-size:15px; color:var(--gold);
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:rgba(201,168,76,0.18); }
+
+  /* ── Inputs ── */
+  .input-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .input-group { display:flex; flex-direction:column; gap:5px; }
+  label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--mist); }
+  input[type="text"], textarea, select, input[type="number"] {
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px; padding:10px 13px; color:var(--paper);
+    font-family:'DM Sans',sans-serif; font-size:14px; outline:none; width:100%;
+    transition:border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color:var(--gold); }
+  textarea { resize:vertical; min-height:80px; }
+  select option { background:#1a1a2e; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding:10px 18px; border:none; border-radius:8px; cursor:pointer;
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600;
+    transition:all 0.18s; letter-spacing:0.4px;
+  }
+  .btn-primary { background:var(--gold); color:var(--ink); }
+  .btn-primary:hover { background:#d4b25a; transform:translateY(-1px); }
+  .btn-secondary { background:rgba(255,255,255,0.08); color:var(--paper); border:1px solid rgba(255,255,255,0.14); }
+  .btn-secondary:hover { background:rgba(255,255,255,0.14); }
+  .btn-danger { background:rgba(181,69,27,0.18); color:#e07050; border:1px solid rgba(181,69,27,0.3); }
+  .btn-danger:hover { background:rgba(181,69,27,0.32); }
+  .btn-sm { padding:5px 11px; font-size:11px; }
+  .btn-icon {
+    padding:5px 9px; background:transparent; border:1px solid rgba(255,255,255,0.14);
+    border-radius:6px; cursor:pointer; color:var(--mist); font-size:13px; transition:all 0.18s;
+  }
+  .btn-icon:hover { background:rgba(255,255,255,0.1); color:var(--paper); }
+
+  /* ── Flashcard ── */
+  .flashcard-wrap {
+    perspective:1000px; height:300px; margin-bottom:20px; cursor:pointer;
+    user-select:none;
+  }
+  .flashcard {
+    width:100%; height:100%; position:relative;
+    transform-style:preserve-3d; transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    border-radius:16px;
+  }
+  .flashcard.flipped { transform:rotateY(180deg); }
+  .card-face {
+    position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border-radius:16px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:36px;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .card-front-en {
+    background:linear-gradient(135deg, rgba(126,184,212,0.13) 0%, rgba(26,26,46,0.95) 100%);
+    border-color:rgba(126,184,212,0.25);
+  }
+  .card-front-zh {
+    background:linear-gradient(135deg, rgba(201,168,76,0.13) 0%, rgba(26,26,46,0.95) 100%);
+    border-color:rgba(201,168,76,0.25);
+  }
+  .card-back {
+    background:linear-gradient(135deg, rgba(90,122,106,0.13) 0%, rgba(26,26,46,0.95) 100%);
+    transform:rotateY(180deg);
+  }
+  .card-word {
+    font-family:'Playfair Display',serif; font-size:38px; text-align:center;
+    color:var(--paper); line-height:1.25; margin-bottom:8px; word-break:break-word;
+  }
+  .card-word-zh {
+    font-family:'Noto Serif SC',serif; font-size:32px; text-align:center;
+    color:var(--paper); line-height:1.45; word-break:break-word;
+  }
+  .card-hint { font-size:11px; color:var(--mist); margin-top:14px; letter-spacing:1.5px; text-transform:uppercase; }
+  .card-corner { position:absolute; top:16px; font-size:11px; }
+  .card-corner-left { left:16px; color:var(--mist); }
+  .card-corner-right { right:16px; color:var(--gold); }
+  .card-mode-badge {
+    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+    font-size:10px; padding:2px 10px; border-radius:20px; font-weight:700; letter-spacing:1px;
+  }
+
+  .review-controls { display:flex; gap:10px; justify-content:center; margin-top:4px; }
+  .btn-forgot {
+    background:rgba(192,57,43,0.18); color:#e07070; border:1px solid rgba(192,57,43,0.38);
+    flex:1; padding:13px; font-size:14px; border-radius:10px; font-weight:600; cursor:pointer; transition:all 0.18s;
+  }
+  .btn-forgot:hover { background:rgba(192,57,43,0.32); }
+  .btn-knew {
+    background:rgba(39,174,96,0.18); color:#6edea0; border:1px solid rgba(39,174,96,0.38);
+    flex:1; padding:13px; font-size:14px; border-radius:10px; font-weight:600; cursor:pointer; transition:all 0.18s;
+  }
+  .btn-knew:hover { background:rgba(39,174,96,0.32); }
+
+  .review-done { text-align:center; padding:50px 20px; }
+  .review-done .big { font-size:52px; margin-bottom:10px; }
+  .review-done h2 { font-family:'Playfair Display',serif; font-size:24px; color:var(--gold); margin-bottom:8px; }
+  .review-done p { color:var(--mist); font-size:13px; margin-bottom:4px; }
+
+  /* ── Progress bar on card ── */
+  .stage-dots { display:flex; gap:4px; margin-top:10px; }
+  .stage-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:rgba(255,255,255,0.15); transition:background 0.3s;
+  }
+  .stage-dot.filled { background:var(--gold); }
+  .stage-dot.current { background:var(--en-color); box-shadow:0 0 6px rgba(126,184,212,0.7); }
+
+  /* ── Word List ── */
+  .word-list { display:flex; flex-direction:column; gap:7px; max-height:440px; overflow-y:auto; }
+  .word-list::-webkit-scrollbar { width:4px; }
+  .word-list::-webkit-scrollbar-thumb { background:rgba(201,168,76,0.28); border-radius:2px; }
+  .word-item {
+    display:flex; align-items:center; gap:10px; padding:11px 14px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+    border-radius:8px; transition:background 0.18s;
+  }
+  .word-item:hover { background:rgba(255,255,255,0.06); }
+  .word-item-en { font-size:14px; font-weight:500; color:var(--paper); flex:1; min-width:0; }
+  .word-item-zh { font-family:'Noto Serif SC',serif; font-size:12px; color:var(--mist); flex:1; min-width:0; }
+  .word-item-stages { display:flex; flex-direction:column; gap:3px; align-items:flex-end; }
+  .stage-pill { font-size:9px; padding:1px 7px; border-radius:10px; white-space:nowrap; font-weight:600; }
+  .pill-en { background:rgba(126,184,212,0.15); color:var(--en-color); }
+  .pill-zh { background:rgba(201,168,76,0.15); color:var(--zh-color); }
+  .word-actions { display:flex; gap:4px; }
+  .edit-inline { display:none; flex-direction:column; gap:8px; padding:12px 14px; background:rgba(201,168,76,0.04); border:1px solid rgba(201,168,76,0.18); border-radius:8px; }
+  .edit-inline.open { display:flex; }
+  .edit-row { display:flex; gap:8px; }
+  .edit-row input { flex:1; }
+
+  /* ── Settings ── */
+  .settings-row { display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .settings-label { font-size:14px; color:var(--paper); }
+  .settings-sub { font-size:11px; color:var(--mist); margin-top:2px; }
+  .toggle {
+    position:relative; width:44px; height:24px; flex-shrink:0;
+    background:rgba(255,255,255,0.14); border-radius:12px; cursor:pointer; transition:background 0.2s;
+  }
+  .toggle.on { background:var(--gold); }
+  .toggle::after {
+    content:''; position:absolute; top:3px; left:3px;
+    width:18px; height:18px; background:white; border-radius:50%;
+    transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle.on::after { transform:translateX(20px); }
+
+  /* ── Schedule ── */
+  .schedule-grid { display:flex; gap:7px; margin-top:12px; align-items:flex-end; }
+  .sched-bar { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .sched-day { font-size:9px; color:var(--mist); text-transform:uppercase; }
+  .sched-count-bar { width:100%; border-radius:3px 3px 0 0; min-height:4px; background:rgba(201,168,76,0.55); }
+  .sched-num { font-size:10px; color:var(--gold); }
+
+  /* ── Import ── */
+  .import-drop {
+    border:2px dashed rgba(201,168,76,0.28); border-radius:12px; padding:28px;
+    text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:14px;
+  }
+  .import-drop:hover, .import-drop.drag-over { border-color:var(--gold); background:rgba(201,168,76,0.05); }
+  .import-drop-icon { font-size:32px; margin-bottom:7px; }
+  .import-drop-text { color:var(--mist); font-size:12px; }
+  .import-preview { margin-top:12px; }
+  .preview-item {
+    display:flex; gap:10px; align-items:center; padding:7px 11px;
+    background:rgba(255,255,255,0.04); border-radius:6px; margin-bottom:5px; font-size:12px;
+  }
+  .preview-item-en { flex:1; color:var(--paper); }
+  .preview-item-zh { flex:1; color:var(--mist); font-family:'Noto Serif SC',serif; }
+
+  /* ── Toast ── */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:rgba(201,168,76,0.96); color:var(--ink); padding:9px 22px;
+    border-radius:30px; font-size:13px; font-weight:600; z-index:9999;
+    transition:transform 0.28s ease; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* ── TTS indicator ── */
+  .tts-btn {
+    position:absolute; top:14px; left:14px;
+    padding:6px 10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    border-radius:6px; cursor:pointer; color:var(--mist); font-size:14px; transition:all 0.18s; z-index:2;
+  }
+  .tts-btn:hover { background:rgba(255,255,255,0.16); color:var(--paper); }
+  .tts-btn.speaking { color:var(--en-color); border-color:var(--en-color); animation:ttsPulse 0.8s ease infinite; }
+  @keyframes ttsPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  @media(max-width:600px) {
+    .input-row { grid-template-columns:1fr; }
+    .card-word { font-size:28px; }
+    .card-word-zh { font-size:24px; }
+    .header-stats { gap:10px; }
+    .stat-num { font-size:17px; }
+    nav { flex-wrap:wrap; }
+    .nav-btn { font-size:11px; padding:8px 5px; }
+  }
+
+  /* ── Long-press word popup ── */
+  .word-popup {
+    position: fixed; z-index: 2000;
+    background: #1e1e38;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 14px;
+    padding: 16px 18px;
+    min-width: 200px; max-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    animation: popupIn 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: all;
+  }
+  @keyframes popupIn {
+    from { opacity:0; transform:scale(0.85) translateY(6px); }
+    to   { opacity:1; transform:scale(1) translateY(0); }
+  }
+  .word-popup-word {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--paper); margin-bottom: 4px;
+  }
+  .word-popup-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px; color: var(--gold);
+    margin-bottom: 10px; min-height: 20px;
+  }
+  .word-popup-pos {
+    font-size: 10px; color: var(--mist);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .word-popup-actions { display:flex; gap:8px; }
+  .word-popup-speak {
+    flex:1; padding:7px; border-radius:7px;
+    background: rgba(126,184,212,0.15); color:var(--en-color);
+    border:1px solid rgba(126,184,212,0.3);
+    cursor:pointer; font-size:13px; font-weight:600;
+    font-family:'DM Sans',sans-serif; transition:all 0.18s;
+  }
+  .word-popup-speak:hover { background:rgba(126,184,212,0.28); }
+  .word-popup-add {
+    flex:1; padding:7px; border-radius:7px;
+    background: rgba(201,168,76,0.15); color:var(--gold);
+    border:1px solid rgba(201,168,76,0.3);
+    cursor:pointer; font-size:13px; font-weight:600;
+    font-family:'DM Sans',sans-serif; transition:all 0.18s;
+  }
+  .word-popup-add:hover { background:rgba(201,168,76,0.28); }
+  .word-popup-close {
+    position:absolute; top:8px; right:10px;
+    background:none; border:none; color:var(--mist);
+    cursor:pointer; font-size:16px; line-height:1; padding:2px 4px;
+  }
+  .word-popup-close:hover { color:var(--paper); }
+
+  /* make each word in card tappable */
+  .tappable-word {
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.15s;
+    padding: 0 1px;
+    -webkit-user-select: none; user-select: none;
+  }
+  .tappable-word:hover { background: rgba(201,168,76,0.15); }
+  .tappable-word.pressing { background: rgba(201,168,76,0.35); }
+
+
+  /* ── ZH→EN search candidates ── */
+  .en-candidates { display:flex; flex-direction:column; gap:6px; }
+  .en-candidate {
+    display:flex; align-items:center; gap:12px; padding:11px 14px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:8px; cursor:pointer; transition:all 0.18s;
+  }
+  .en-candidate:hover { background:rgba(201,168,76,0.1); border-color:rgba(201,168,76,0.3); }
+  .en-candidate-word { font-size:16px; font-weight:600; color:var(--paper); flex:1; }
+  .en-candidate-zh { font-family:'Noto Serif SC',serif; font-size:12px; color:var(--mist); flex:1; }
+  .en-candidate-pos { font-size:10px; padding:2px 7px; border-radius:10px; background:rgba(126,184,212,0.12); color:var(--en-color); white-space:nowrap; }
+  .en-candidate-add { font-size:11px; padding:5px 12px; border-radius:6px; background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid rgba(201,168,76,0.3); cursor:pointer; white-space:nowrap; transition:all 0.18s; }
+  .en-candidate-add:hover { background:rgba(201,168,76,0.3); }
+  .en-candidate.already-added { opacity:0.45; pointer-events:none; }
+  .en-candidate.already-added .en-candidate-add { background:rgba(39,174,96,0.15); color:#6edea0; border-color:rgba(39,174,96,0.3); }
+
+
+  /* ── Recording UI ── */
+  .audio-source-row {
+    display:flex; align-items:center; gap:8px; margin-top:10px; justify-content:center; flex-wrap:wrap;
+  }
+  .audio-source-btn {
+    padding:6px 14px; border-radius:20px; border:none; cursor:pointer; font-size:12px;
+    font-family:'DM Sans',sans-serif; font-weight:600; transition:all 0.2s;
+  }
+  .audio-source-btn.std { background:rgba(126,184,212,0.15); color:var(--en-color); border:1px solid rgba(126,184,212,0.3); }
+  .audio-source-btn.std.active { background:rgba(126,184,212,0.35); border-color:var(--en-color); }
+  .audio-source-btn.rec { background:rgba(201,168,76,0.13); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
+  .audio-source-btn.rec.active { background:rgba(201,168,76,0.3); border-color:var(--gold); }
+  .audio-source-btn.rec.no-rec { opacity:0.45; }
+  .record-btn {
+    padding:6px 14px; border-radius:20px; border:1px solid rgba(192,57,43,0.4);
+    background:rgba(192,57,43,0.15); color:#e07070; cursor:pointer; font-size:12px;
+    font-family:'DM Sans',sans-serif; font-weight:600; transition:all 0.2s;
+  }
+  .record-btn.recording {
+    background:rgba(192,57,43,0.35); border-color:#e07070; color:#e07070;
+    animation:recPulse 1s ease infinite;
+  }
+  @keyframes recPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(0.97)} }
+
+  /* word list recording badge */
+  .rec-badge {
+    font-size:9px; padding:1px 6px; border-radius:10px;
+    background:rgba(201,168,76,0.18); color:var(--gold); font-weight:600;
+  }
+  .no-rec-badge {
+    font-size:9px; padding:1px 6px; border-radius:10px;
+    background:rgba(255,255,255,0.07); color:var(--mist);
+  }
+
+  /* Recording modal */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    animation:fadeIn 0.2s ease;
+  }
+  .modal-box {
+    background:#1e1e35; border:1px solid rgba(201,168,76,0.25); border-radius:16px;
+    padding:28px; width:100%; max-width:400px;
+  }
+  .modal-title { font-family:'Playfair Display',serif; font-size:18px; color:var(--gold); margin-bottom:6px; }
+  .modal-word { font-size:26px; font-weight:600; color:var(--paper); margin-bottom:20px; }
+  .waveform {
+    width:100%; height:50px; background:rgba(255,255,255,0.04); border-radius:8px;
+    margin-bottom:16px; display:flex; align-items:center; justify-content:center;
+    gap:2px; overflow:hidden;
+  }
+  .wave-bar {
+    width:3px; background:var(--en-color); border-radius:2px;
+    transition:height 0.1s ease; min-height:3px;
+  }
+  .modal-controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <span class="logo-zh">记忆宫殿</span>
+      <span class="logo-en">Memory Palace</span>
+    </div>
+    <div class="header-stats">
+      <div class="stat"><span class="stat-num" id="statTotal">0</span><span class="stat-label">词汇总量</span></div>
+      <div class="stat"><span class="stat-num" id="statDueEN">0</span><span class="stat-label">英→中 待背</span></div>
+      <div class="stat"><span class="stat-num" id="statDueZH">0</span><span class="stat-label">中→英 待背</span></div>
+      <div class="stat"><span class="stat-num" id="statDone">0</span><span class="stat-label">今日完成</span></div>
+    </div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="showPanel('review',this)">📖 今日复习</button>
+    <button class="nav-btn" onclick="showPanel('add',this)">✚ 添加词汇</button>
+    <button class="nav-btn" onclick="showPanel('list',this)">📋 词汇列表</button>
+    <button class="nav-btn" onclick="showPanel('import',this)">⬆ 批量导入</button>
+    <button class="nav-btn" onclick="showPanel('settings',this)">⚙ 设置</button>
+  </nav>
+
+  <!-- ══ REVIEW ══ -->
+  <div id="panel-review" class="panel active">
+    <!-- mode selector -->
+    <div class="mode-tabs">
+      <button class="mode-tab mode-tab-en active" id="tab-en" onclick="switchReviewMode('en')">
+        🇺🇸 英文 → 中文
+        <span class="mode-badge badge-en" id="badge-en">0</span>
+      </button>
+      <button class="mode-tab mode-tab-zh" id="tab-zh" onclick="switchReviewMode('zh')">
+        🇨🇳 中文 → 英文
+        <span class="mode-badge badge-zh" id="badge-zh">0</span>
+      </button>
+    </div>
+    <div id="review-area"></div>
+  </div>
+
+  <!-- ══ ADD ══ -->
+  <div id="panel-add" class="panel">
+
+    <!-- ── 搜中文找英文 ── -->
+    <div class="card">
+      <div class="section-title">搜中文找英文</div>
+      <p style="color:var(--mist);font-size:12px;margin-bottom:12px;">输入中文，获取多个对应英文候选，点击即可选入下方表单。</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="text" id="zhSearchInput" placeholder="输入中文，例如：短暂的" style="flex:1"
+          onkeydown="if(event.key==='Enter')searchEnByZh()">
+        <button class="btn btn-primary" onclick="searchEnByZh()">搜索</button>
+      </div>
+      <div id="zhSearchStatus" style="font-size:12px;color:var(--mist);margin-bottom:8px;"></div>
+      <div id="zhSearchResults"></div>
+    </div>
+
+    <!-- ── 手动填写 / 英文→自动翻中文 ── -->
+    <div class="card">
+      <div class="section-title">填写词汇</div>
+      <p style="color:var(--mist);font-size:12px;margin-bottom:14px;">每个词汇会同时进入<span style="color:var(--en-color)">「英→中」</span>和<span style="color:var(--gold)">「中→英」</span>两套独立的复习计划。</p>
+      <div class="input-row">
+        <div class="input-group">
+          <label>英文（输入后自动翻译 ↓）</label>
+          <input type="text" id="addEn" placeholder="e.g. serendipity" oninput="scheduleAutoTranslate()">
+        </div>
+        <div class="input-group">
+          <label>中文 <span id="translateStatus" style="color:var(--gold);font-size:10px;"></span></label>
+          <input type="text" id="addZh" placeholder="中文含义（可手动编辑）">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="clearAddForm()">清空</button>
+        <button class="btn btn-primary" onclick="doAddWord()">＋ 添加到词库</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LIST ══ -->
+  <div id="panel-list" class="panel">
+    <div class="card">
+      <div class="section-title">词汇库管理</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="searchInput" placeholder="搜索词汇..." oninput="renderWordList()" style="flex:1">
+        <select id="filterSelect" onchange="renderWordList()" style="width:120px;">
+          <option value="all">全部</option>
+          <option value="today">今日到期</option>
+          <option value="new">全新词汇</option>
+        </select>
+      </div>
+      <div class="word-list" id="wordList"></div>
+    </div>
+  </div>
+
+  <!-- ══ IMPORT ══ -->
+  <div id="panel-import" class="panel">
+    <div class="card">
+      <div class="section-title">批量导入词汇</div>
+      <p style="color:var(--mist);font-size:12px;margin-bottom:14px;">每行格式：<b style="color:var(--gold)">英文 = 中文</b>、<b style="color:var(--gold)">英文，中文</b>、<b style="color:var(--gold)">英文,中文</b>，或仅英文（自动翻译）。支持拖拽 .txt 文件。</p>
+      <div class="import-drop" id="importDrop" onclick="document.getElementById('importFile').click()">
+        <div class="import-drop-icon">📄</div>
+        <div class="import-drop-text">点击上传 .txt 文件，或拖拽至此</div>
+        <input type="file" id="importFile" accept=".txt" style="display:none" onchange="handleFileImport(event)">
+      </div>
+      <textarea id="importText" placeholder="或在此粘贴词汇文本...&#10;示例：&#10;ephemeral = 短暂的&#10;quintessential，典型的&#10;loquacious" style="margin-bottom:12px;min-height:120px;"></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="previewImport()">👁 预览解析</button>
+        <button class="btn btn-primary" onclick="confirmImport()">✓ 确认导入</button>
+      </div>
+      <div id="importPreview" class="import-preview"></div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS ══ -->
+  <div id="panel-settings" class="panel">
+    <div class="card">
+      <div class="section-title">学习设置</div>
+      <div class="settings-row">
+        <div><div class="settings-label">每日新词数量</div><div class="settings-sub">每天各模式各自添加几个新词</div></div>
+        <input type="number" id="setDailyNew" min="1" max="50" value="10" style="width:70px;text-align:center" onchange="saveSettings()">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">翻卡自动朗读</div><div class="settings-sub">翻卡时自动播放英文发音（Web Speech）</div></div>
+        <div class="toggle" id="toggleAutoPlay" onclick="toggleSetting('autoPlay')"></div>
+      </div>
+
+    </div>
+    <div class="card">
+      <div class="section-title">艾宾浩斯记忆曲线（英→中 和 中→英 各自独立）</div>
+      <p style="color:var(--mist);font-size:12px;margin-bottom:14px;">新词将在以下7个时间节点各自独立安排复习，两套进度互不干扰：</p>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第1次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.7);border-radius:2px;"></div><span style="color:var(--mist);">学习后 20分钟（今天）</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第2次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.6);border-radius:2px;width:90%;"></div><span style="color:var(--mist);">1天后</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第3次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.5);border-radius:2px;width:78%;"></div><span style="color:var(--mist);">2天后</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第4次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.4);border-radius:2px;width:64%;"></div><span style="color:var(--mist);">4天后</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第5次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.3);border-radius:2px;width:50%;"></div><span style="color:var(--mist);">7天后</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第6次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.2);border-radius:2px;width:34%;"></div><span style="color:var(--mist);">15天后</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;font-size:12px;">
+          <span style="width:50px;color:var(--gold);">第7次</span><div style="flex:1;height:3px;background:rgba(201,168,76,0.12);border-radius:2px;width:20%;"></div><span style="color:var(--mist);">30天后 ✓ 完全掌握</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">未来7天复习安排</div>
+      <div class="schedule-grid" id="scheduleGrid"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">数据管理</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">⬇ 导出词库 JSON</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('importJSON').click()">⬆ 导入词库 JSON</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 清空全部数据</button>
+        <input type="file" id="importJSON" accept=".json" style="display:none" onchange="importJSONData(event)">
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONSTANTS & DATA MODEL
+// ══════════════════════════════════════════
+// Each word: { id, en, zh, stageEN, stageZH, learnedDateEN, learnedDateZH, createdAt }
+// stageEN = progress for English→Chinese mode (0..7, 7=mastered)
+// stageZH = progress for Chinese→English mode (0..7, 7=mastered)
+// They are COMPLETELY INDEPENDENT
+
+const EBBINGHAUS = [0, 1, 2, 4, 7, 15, 30]; // days offset for each review stage
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function today() { return todayStr(); }
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('mp_words2') || '[]'); } catch { return []; }
+}
+function saveData(w) { localStorage.setItem('mp_words2', JSON.stringify(w)); }
+
+function loadSettings() {
+  const def = { dailyNew:10, autoPlay:false };
+  try { return { ...def, ...JSON.parse(localStorage.getItem('mp_settings2') || '{}') }; } catch { return def; }
+}
+function saveSettingsData(s) { localStorage.setItem('mp_settings2', JSON.stringify(s)); }
+
+function loadTodayDone() {
+  const key = 'mp_done2_' + todayStr();
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch { return new Set(); }
+}
+function saveTodayDone(done) {
+  localStorage.setItem('mp_done2_' + todayStr(), JSON.stringify([...done]));
+}
+
+// ── State ──
+let words = loadData();
+let settings = loadSettings();
+let todayDone = loadTodayDone(); // set of "wordId:mode" strings e.g. "123:en"
+let reviewMode = 'en'; // 'en' or 'zh'
+let reviewQueue = [];
+let reviewIdx = 0;
+let isFlipped = false;
+
+// ══════════════════════════════════════════
+// EBBINGHAUS HELPERS
+// ══════════════════════════════════════════
+function getDueDate(word, mode) {
+  const stage = mode === 'en' ? (word.stageEN || 0) : (word.stageZH || 0);
+  if (stage >= EBBINGHAUS.length) return null; // mastered
+  const learnedDate = mode === 'en'
+    ? (word.learnedDateEN || word.createdAt || today())
+    : (word.learnedDateZH || word.createdAt || today());
+  return addDays(learnedDate, EBBINGHAUS[stage]);
+}
+
+function isDueToday(word, mode) {
+  const due = getDueDate(word, mode);
+  if (!due) return false;
+  return due <= today();
+}
+
+function doneKey(id, mode) { return id + ':' + mode; }
+
+// ══════════════════════════════════════════
+// WORD OPERATIONS
+// ══════════════════════════════════════════
+function doAddWord(en, zh, silent) {
+  if (typeof en === 'undefined') {
+    en = document.getElementById('addEn').value.trim();
+    zh = document.getElementById('addZh').value.trim();
+  }
+  if (!en) { showToast('请输入英文词汇'); return; }
+  if (!zh) { showToast('请输入中文含义'); return; }
+  const id = Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  words.push({
+    id, en, zh,
+    stageEN: 0, learnedDateEN: today(),
+    stageZH: 0, learnedDateZH: today(),
+    createdAt: today()
+  });
+  saveData(words);
+  if (!silent) {
+    clearAddForm();
+    showToast('✓ 已添加「' + en + '」（已进入英→中 和 中→英 两套计划）');
+    updateStats();
+  }
+}
+
+function deleteWord(id) {
+  if (!confirm('确认删除这个词汇？')) return;
+  words = words.filter(w => w.id !== id);
+  saveData(words);
+  renderWordList();
+  updateStats();
+  showToast('已删除');
+}
+
+function updateWord(id, en, zh) {
+  const w = words.find(w => w.id === id);
+  if (w) { w.en = en; w.zh = zh; saveData(words); }
+  renderWordList();
+  showToast('✓ 已保存');
+}
+
+// ══════════════════════════════════════════
+// AUTO TRANSLATE
+// ══════════════════════════════════════════
+let translateTimer = null;
+function scheduleAutoTranslate() {
+  clearTimeout(translateTimer);
+  const en = document.getElementById('addEn').value.trim();
+  if (!en) { document.getElementById('addZh').value = ''; setTranslateStatus(''); return; }
+  setTranslateStatus('翻译中…');
+  translateTimer = setTimeout(() => autoTranslate(en), 700);
+}
+async function autoTranslate(text) {
+  setTranslateStatus('翻译中…');
+  const encoded = encodeURIComponent(text);
+
+  // Strategy 1: MyMemory (free, no key, widely available)
+  try {
+    const r = await fetch(
+      'https://api.mymemory.translated.net/get?q=' + encoded + '&langpair=en|zh-CN',
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const d = await r.json();
+    const zh = (d?.responseData?.translatedText || '').trim();
+    if (zh && /[一-鿿]/.test(zh)) {
+      document.getElementById('addZh').value = zh;
+      setTranslateStatus('✓ 已翻译');
+      return;
+    }
+  } catch(e) {}
+
+  // Strategy 2: Google Translate unofficial endpoint (same one used for TTS)
+  try {
+    const r = await fetch(
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=' + encoded,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const d = await r.json();
+    // response format: [[["translation","original",...],...],...]
+    const zh = (d?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || '').trim();
+    if (zh && /[一-鿿]/.test(zh)) {
+      document.getElementById('addZh').value = zh;
+      setTranslateStatus('✓ 已翻译');
+      return;
+    }
+  } catch(e) {}
+
+  // Strategy 3: Lingva public instance
+  try {
+    const r = await fetch(
+      'https://lingva.ml/api/v1/en/zh/' + encoded,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const d = await r.json();
+    const zh = (d?.translation || '').trim();
+    if (zh && /[一-鿿]/.test(zh)) {
+      document.getElementById('addZh').value = zh;
+      setTranslateStatus('✓ 已翻译');
+      return;
+    }
+  } catch(e) {}
+
+  setTranslateStatus('⚠ 网络不可用，请手动输入');
+}
+
+function setTranslateStatus(t) { document.getElementById('translateStatus').textContent = t; }
+function clearAddForm() {
+  document.getElementById('addEn').value = '';
+  document.getElementById('addZh').value = '';
+  setTranslateStatus('');
+}
+
+// ══════════════════════════════════════════
+// TTS + RECORDING SYSTEM
+// ══════════════════════════════════════════
+let ttsVoices = [];
+let currentAudio = null;
+
+// ── Voice preference per word: 'std' or 'my' ──
+// stored in localStorage as mp_voicepref_{wordId}
+// Recordings stored as mp_rec_{wordId} (base64 dataURL)
+
+function getVoicePref(wordId) {
+  return localStorage.getItem('mp_voicepref_' + wordId) || 'std';
+}
+function setVoicePref(wordId, pref) {
+  localStorage.setItem('mp_voicepref_' + wordId, pref);
+}
+function getRecording(wordId) {
+  return localStorage.getItem('mp_rec_' + wordId) || null;
+}
+function saveRecording(wordId, dataURL) {
+  localStorage.setItem('mp_rec_' + wordId, dataURL);
+}
+function deleteRecording(wordId) {
+  localStorage.removeItem('mp_rec_' + wordId);
+  localStorage.removeItem('mp_voicepref_' + wordId);
+}
+function hasRecording(wordId) {
+  return !!localStorage.getItem('mp_rec_' + wordId);
+}
+
+function loadVoices() {
+  if (window.speechSynthesis) ttsVoices = window.speechSynthesis.getVoices();
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  setTimeout(loadVoices, 200);
+}
+
+function setTTSBtnState(speaking) {
+  document.querySelectorAll('.tts-btn').forEach(b => b.classList.toggle('speaking', speaking));
+}
+
+// Main speak dispatcher — checks preference
+function speakWord(wordId, text) {
+  const pref = getVoicePref(wordId);
+  if (pref === 'my') {
+    const rec = getRecording(wordId);
+    if (rec) { playRecording(rec); return; }
+    // fallback if recording missing
+  }
+  speakEN(text);
+}
+
+function playRecording(dataURL) {
+  stopAllAudio();
+  setTTSBtnState(true);
+  const audio = new Audio(dataURL);
+  currentAudio = audio;
+  audio.onended = () => { setTTSBtnState(false); currentAudio = null; };
+  audio.onerror = () => { setTTSBtnState(false); currentAudio = null; };
+  audio.play().catch(() => { setTTSBtnState(false); currentAudio = null; });
+}
+
+function stopAllAudio() {
+  if (currentAudio) {
+    currentAudio.onended = null;
+    currentAudio.onerror = null;
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  setTTSBtnState(false);
+}
+
+function speakEN(text) {
+  if (!text) return;
+  // stop everything first — prevents overlapping audio
+  stopAllAudio();
+  setTTSBtnState(true);
+
+  const encoded = encodeURIComponent(text);
+  // Only Google TTS — VoiceRSS demo key doesn't work publicly
+  // Fallback chain: Google endpoint 1 → Google endpoint 2 → Web Speech
+  const urls = [
+    `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encoded}&tl=en-US&client=gtx`,
+    `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=en-US&client=tw-ob`
+  ];
+
+  let tried = 0;
+  function tryNext() {
+    // Guard: if audio was stopped externally, don't continue chain
+    if (tried > 0 && currentAudio !== null) return;
+    if (tried >= urls.length) {
+      speakWebSpeech(text);
+      return;
+    }
+    const idx = tried++;
+    const audio = new Audio();
+    currentAudio = audio;
+    // Timeout fallback: if nothing plays in 3s, move on
+    const timeout = setTimeout(() => {
+      if (currentAudio === audio) {
+        stopAllAudio();
+        tryNext();
+      }
+    }, 3000);
+    audio.oncanplaythrough = () => clearTimeout(timeout);
+    audio.onended = () => {
+      clearTimeout(timeout);
+      if (currentAudio === audio) { currentAudio = null; }
+      setTTSBtnState(false);
+    };
+    audio.onerror = () => {
+      clearTimeout(timeout);
+      if (currentAudio === audio) { currentAudio = null; }
+      setTTSBtnState(false);
+      tryNext();
+    };
+    audio.src = urls[idx];
+    audio.play().catch(() => {
+      clearTimeout(timeout);
+      if (currentAudio === audio) { currentAudio = null; }
+      setTTSBtnState(false);
+      tryNext();
+    });
+  }
+  tryNext();
+}
+
+function speakWebSpeech(text) {
+  if (!window.speechSynthesis) { setTTSBtnState(false); return; }
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US'; utt.rate = 0.88; utt.pitch = 1;
+  if (!ttsVoices.length) ttsVoices = window.speechSynthesis.getVoices();
+  const preferred = ['Samantha','Alex','Google US English','Microsoft Aria','Karen','Moira','Tessa','Victoria'];
+  let voice = null;
+  for (const name of preferred) {
+    voice = ttsVoices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+    if (voice) break;
+  }
+  if (!voice) voice = ttsVoices.find(v => v.lang === 'en-US') || ttsVoices.find(v => v.lang.startsWith('en'));
+  if (voice) utt.voice = voice;
+  utt.onend = () => setTTSBtnState(false);
+  utt.onerror = () => setTTSBtnState(false);
+  window.speechSynthesis.speak(utt);
+}
+
+// ══════════════════════════════════════════
+// RECORDING MODAL
+// ══════════════════════════════════════════
+let mediaRecorder = null;
+let audioChunks = [];
+let recWordId = null;
+let recWordText = null;
+let waveAnimId = null;
+let analyser = null;
+
+function openRecordModal(wordId, wordText) {
+  recWordId = wordId;
+  recWordText = wordText;
+  const hasRec = hasRecording(wordId);
+  const pref = getVoicePref(wordId);
+
+  const html = `
+    <div class="modal-overlay" id="recModal" onclick="if(event.target===this)closeRecModal()">
+      <div class="modal-box">
+        <div class="modal-title">录制我的发音</div>
+        <div class="modal-word">${esc(wordText)}</div>
+
+        <div class="waveform" id="waveform">
+          ${Array.from({length:28},()=>'<div class="wave-bar" style="height:4px"></div>').join('')}
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--mist);margin-bottom:8px;text-align:center;">播放时使用：</div>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="audio-source-btn std ${pref==='std'?'active':''}" id="prefStdBtn" onclick="setPrefUI('std')">🔊 标准发音</button>
+            <button class="audio-source-btn rec ${!hasRec?'no-rec':''} ${pref==='my'&&hasRec?'active':''}" id="prefMyBtn" onclick="setPrefUI('my')" ${!hasRec?'disabled':''}>🎙 我的录音</button>
+          </div>
+        </div>
+
+        <div id="recPlayback" style="${hasRec?'':'display:none'};margin-bottom:14px;text-align:center;">
+          <button class="btn btn-secondary btn-sm" onclick="playMyRec()">▶ 播放我的录音</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMyRec()">✕ 删除录音</button>
+        </div>
+
+        <div class="modal-controls">
+          <button class="record-btn" id="recBtn" onclick="toggleRecord()">⏺ 开始录音</button>
+          <button class="btn btn-secondary" onclick="closeRecModal()">完成</button>
+        </div>
+        <div style="font-size:11px;color:var(--mist);text-align:center;margin-top:12px;" id="recStatus">点击「开始录音」后朗读单词，再次点击停止</div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function setPrefUI(pref) {
+  if (pref === 'my' && !hasRecording(recWordId)) return;
+  setVoicePref(recWordId, pref);
+  document.getElementById('prefStdBtn').classList.toggle('active', pref==='std');
+  document.getElementById('prefMyBtn').classList.toggle('active', pref==='my');
+}
+
+function closeRecModal() {
+  stopWaveAnimation();
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  const m = document.getElementById('recModal');
+  if (m) m.remove();
+  renderWordList(); // refresh badges
+}
+
+async function toggleRecord() {
+  const btn = document.getElementById('recBtn');
+  const status = document.getElementById('recStatus');
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    // Stop
+    mediaRecorder.stop();
+    btn.textContent = '⏺ 开始录音';
+    btn.classList.remove('recording');
+    stopWaveAnimation();
+    status.textContent = '录音已保存 ✓';
+  } else {
+    // Start
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      startWaveAnimation(stream);
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onload = ev => {
+          saveRecording(recWordId, ev.target.result);
+          // enable "my recording" button
+          const myBtn = document.getElementById('prefMyBtn');
+          if (myBtn) { myBtn.disabled = false; myBtn.classList.remove('no-rec'); }
+          const playback = document.getElementById('recPlayback');
+          if (playback) playback.style.display = '';
+          // auto-switch preference to my recording
+          setPrefUI('my');
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
+        stopWaveAnimation();
+      };
+      mediaRecorder.start();
+      btn.textContent = '⏹ 停止录音';
+      btn.classList.add('recording');
+      status.textContent = '🔴 录音中… 请朗读单词，完成后点击停止';
+    } catch(e) {
+      status.textContent = '⚠ 无法访问麦克风，请允许麦克风权限';
+    }
+  }
+}
+
+function playMyRec() {
+  const rec = getRecording(recWordId);
+  if (rec) { const a = new Audio(rec); a.play(); }
+}
+
+function deleteMyRec() {
+  deleteRecording(recWordId);
+  document.getElementById('recPlayback').style.display = 'none';
+  const myBtn = document.getElementById('prefMyBtn');
+  if (myBtn) { myBtn.disabled = true; myBtn.classList.add('no-rec'); myBtn.classList.remove('active'); }
+  document.getElementById('prefStdBtn').classList.add('active');
+  document.getElementById('recStatus').textContent = '录音已删除';
+}
+
+function startWaveAnimation(stream) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 64;
+  const src = ctx.createMediaStreamSource(stream);
+  src.connect(analyser);
+  const bufLen = analyser.frequencyBinCount;
+  const dataArr = new Uint8Array(bufLen);
+  const bars = document.querySelectorAll('#waveform .wave-bar');
+  function draw() {
+    waveAnimId = requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(dataArr);
+    bars.forEach((bar, i) => {
+      const val = dataArr[Math.floor(i * bufLen / bars.length)] || 0;
+      bar.style.height = Math.max(3, val / 255 * 46) + 'px';
+    });
+  }
+  draw();
+}
+
+function stopWaveAnimation() {
+  if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+  document.querySelectorAll('#waveform .wave-bar').forEach(b => b.style.height = '3px');
+}
+
+// ══════════════════════════════════════════
+// REVIEW SYSTEM
+// ══════════════════════════════════════════
+function switchReviewMode(mode) {
+  reviewMode = mode;
+  document.getElementById('tab-en').classList.toggle('active', mode === 'en');
+  document.getElementById('tab-zh').classList.toggle('active', mode === 'zh');
+  buildAndRenderReview();
+}
+
+function buildAndRenderReview() {
+  const due = words.filter(w => isDueToday(w, reviewMode) && !todayDone.has(doneKey(w.id, reviewMode)));
+  // shuffle
+  reviewQueue = [...due];
+  for (let i = reviewQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [reviewQueue[i], reviewQueue[j]] = [reviewQueue[j], reviewQueue[i]];
+  }
+  reviewIdx = 0;
+  isFlipped = false;
+  renderReviewCard();
+}
+
+function renderReviewCard() {
+  const area = document.getElementById('review-area');
+  if (!reviewQueue.length || reviewIdx >= reviewQueue.length) {
+    const doneCountEN = [...todayDone].filter(k => k.endsWith(':en')).length;
+    const doneCountZH = [...todayDone].filter(k => k.endsWith(':zh')).length;
+    const otherMode = reviewMode === 'en' ? 'zh' : 'en';
+    const otherDue = words.filter(w => isDueToday(w, otherMode) && !todayDone.has(doneKey(w.id, otherMode))).length;
+    area.innerHTML = `
+      <div class="review-done">
+        <div class="big">🎉</div>
+        <h2>${reviewMode === 'en' ? '英→中' : '中→英'} 今日完成！</h2>
+        <p>今日已完成：英→中 ${doneCountEN} 个 · 中→英 ${doneCountZH} 个</p>
+        ${otherDue > 0 ? `<p style="margin-top:10px;color:var(--gold);">「${otherMode === 'en' ? '英→中' : '中→英'}」还有 <b>${otherDue}</b> 个待复习</p>
+          <button class="btn btn-primary" style="margin-top:14px;" onclick="switchReviewMode('${otherMode}')">切换到 ${otherMode === 'en' ? '英→中' : '中→英'} 复习</button>` : ''}
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="buildAndRenderReview()">🔄 重新复习本模式</button>
+      </div>`;
+    return;
+  }
+
+  const w = reviewQueue[reviewIdx];
+  const stage = reviewMode === 'en' ? (w.stageEN || 0) : (w.stageZH || 0);
+  const totalCards = reviewQueue.length;
+
+  // en-mode: front=English, back=Chinese
+  // zh-mode: front=Chinese, back=English
+  const frontClass = reviewMode === 'en' ? 'card-front-en' : 'card-front-zh';
+  const frontContent = reviewMode === 'en'
+    ? `<div class="card-word">${wrapTappable(w.en, 'en')}</div>`
+    : `<div class="card-word-zh">${wrapTappable(w.zh, 'zh')}</div>`;
+  const frontHint = reviewMode === 'en' ? 'ENGLISH · 点击单词查询' : '中文 · 点击词语查询';
+  const backContent = reviewMode === 'en'
+    ? `<div class="card-word-zh">${wrapTappable(w.zh, 'zh')}</div>`
+    : `<div class="card-word">${wrapTappable(w.en, 'en')}</div>`;
+  const backHint = reviewMode === 'en' ? '中文翻译' : 'ENGLISH';
+  const modeLabelColor = reviewMode === 'en' ? 'var(--en-color)' : 'var(--zh-color)';
+
+  // stage dots
+  const dots = Array.from({length: EBBINGHAUS.length}, (_,i) =>
+    `<div class="stage-dot ${i < stage ? 'filled' : (i === stage ? 'current' : '')}"></div>`
+  ).join('');
+
+  closeWordPopup();
+  const remaining = reviewQueue.length - reviewIdx;
+  area.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mist);margin-bottom:12px;">
+      <span style="color:${modeLabelColor};font-weight:600;">${reviewMode === 'en' ? '🇺🇸 英 → 中' : '🇨🇳 中 → 英'}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span>还剩 ${remaining} 张 · 第${stage + 1}次复习</span>
+        <button class="btn-icon" style="font-size:11px;padding:3px 8px;" onclick="openInlineEdit('${escStr(w.id)}')">✏ 编辑</button>
+        <button class="btn-icon" style="font-size:11px;padding:3px 8px;color:#e07050;" onclick="deleteFromReview('${escStr(w.id)}')">✕ 删除</button>
+      </div>
+    </div>
+    <div id="inline-edit-bar" style="display:none;margin-bottom:10px;">
+      <div style="display:flex;gap:8px;margin-bottom:6px;">
+        <input type="text" id="iedit-en" placeholder="英文" style="flex:1;font-size:13px;padding:8px 10px;">
+        <input type="text" id="iedit-zh" placeholder="中文" style="flex:1;font-size:13px;padding:8px 10px;">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('inline-edit-bar').style.display='none'">取消</button>
+        <button class="btn btn-primary btn-sm" onclick="saveInlineEdit('${escStr(w.id)}')">保存</button>
+      </div>
+    </div>
+    <div class="flashcard-wrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="card-face ${frontClass}">
+          <button class="tts-btn" id="tts-main-btn" onclick="event.stopPropagation();speakWord('${escStr(w.id)}','${escStr(w.en)}')" title="朗读英文">🔊</button>
+          <span class="card-corner card-corner-right">点击翻转</span>
+          ${frontContent}
+          <div class="card-hint">${frontHint}</div>
+          <div class="stage-dots">${dots}</div>
+          <div class="card-mode-badge" style="background:rgba(255,255,255,0.07);color:${modeLabelColor};">
+            ${reviewMode === 'en' ? '英 → 中' : '中 → 英'}
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <button class="tts-btn" onclick="event.stopPropagation();speakWord('${escStr(w.id)}','${escStr(w.en)}')" title="朗读英文">🔊</button>
+          ${backContent}
+          <div class="card-hint">${backHint}</div>
+          <div class="stage-dots">${dots}</div>
+        </div>
+      </div>
+    </div>
+    <div class="review-controls" id="reviewControls" style="display:none;">
+      <button class="btn-forgot" onclick="markReview(false)">✗ 忘记了</button>
+      <button class="btn-knew" onclick="markReview(true)">✓ 记住了</button>
+    </div>
+    <div class="audio-source-row">
+      <button class="audio-source-btn std ${getVoicePref(w.id)==='std'?'active':''}"
+        id="pref-std-btn"
+        onclick="setVoicePref('${escStr(w.id)}','std');document.getElementById('pref-std-btn').classList.add('active');document.getElementById('pref-my-btn').classList.remove('active')">🔊 标准发音</button>
+      <button class="audio-source-btn rec ${hasRecording(w.id)?'':'no-rec'} ${getVoicePref(w.id)==='my'&&hasRecording(w.id)?'active':''}"
+        id="pref-my-btn"
+        onclick="if(hasRecording('${escStr(w.id)}')){setVoicePref('${escStr(w.id)}','my');document.getElementById('pref-my-btn').classList.add('active');document.getElementById('pref-std-btn').classList.remove('active');}"
+        ${hasRecording(w.id)?'':'disabled'}>🎙 我的录音${hasRecording(w.id)?'':' (未录制)'}</button>
+      <button class="record-btn" onclick="openRecordModal('${escStr(w.id)}','${escStr(w.en)}')">⏺ 去录音</button>
+    </div>`;
+  // enable long-press after DOM is ready
+  requestAnimationFrame(initCardLongPress);
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  const card = document.getElementById('flashcard');
+  if (card) card.classList.toggle('flipped', isFlipped);
+  if (isFlipped) {
+    document.getElementById('reviewControls').style.display = 'flex';
+    // auto-speak English on flip
+    const w = reviewQueue[reviewIdx];
+    if (settings.autoPlay && w) {
+      setTimeout(() => speakWord(w.id, w.en), 300);
+    }
+  }
+}
+
+function markReview(knew) {
+  const w = reviewQueue[reviewIdx];
+  if (!w) return;
+
+  if (knew) {
+    // 记住了 → 进度+1，标记今日完成，移出队列
+    if (reviewMode === 'en') {
+      w.stageEN = Math.min((w.stageEN || 0) + 1, EBBINGHAUS.length);
+    } else {
+      w.stageZH = Math.min((w.stageZH || 0) + 1, EBBINGHAUS.length);
+    }
+    todayDone.add(doneKey(w.id, reviewMode));
+    saveTodayDone(todayDone);
+    saveData(words);
+    reviewIdx++;
+  } else {
+    // 忘记了 → 进度归零，重置学习日期，把这张卡放到队列末尾继续背
+    if (reviewMode === 'en') {
+      w.stageEN = 0;
+      w.learnedDateEN = today();
+    } else {
+      w.stageZH = 0;
+      w.learnedDateZH = today();
+    }
+    saveData(words);
+    // 从当前位置移除，追加到队列末尾
+    reviewQueue.splice(reviewIdx, 1);
+    reviewQueue.push(w);
+    // reviewIdx 不变，下一张自然出现
+  }
+
+  isFlipped = false;
+  updateStats();
+  renderReviewCard();
+}
+
+// ══════════════════════════════════════════
+// LONG-PRESS WORD LOOKUP
+// ══════════════════════════════════════════
+
+// Wrap each space-separated token as a tappable span
+function wrapTappable(text, lang) {
+  if (!text) return '';
+  if (lang === 'en') {
+    // Split English by spaces, keep punctuation attached to word
+    return text.split(/(\s+)/).map(token => {
+      if (/^\s+$/.test(token)) return token;
+      const clean = token.replace(/[^a-zA-Z'-]/g, '');
+      if (!clean) return esc(token);
+      return `<span class="tappable-word" data-word="${esc(clean)}" data-lang="en">${esc(token)}</span>`;
+    }).join('');
+  } else {
+    // Chinese: wrap each character or 2-4 char group
+    // Split on punctuation boundaries, wrap meaningful chunks
+    const chunks = [];
+    let i = 0;
+    while (i < text.length) {
+      const ch = text[i];
+      if (/[一-鿿㐀-䶿]/.test(ch)) {
+        // Try to grab 2-4 char Chinese word
+        let best = ch;
+        for (let len = 4; len >= 2; len--) {
+          if (i + len <= text.length) { best = text.slice(i, i + len); break; }
+        }
+        chunks.push(`<span class="tappable-word" data-word="${esc(best)}" data-lang="zh">${esc(best)}</span>`);
+        i += best.length;
+      } else {
+        chunks.push(esc(ch));
+        i++;
+      }
+    }
+    return chunks.join('');
+  }
+}
+
+let popupEl = null;
+let popupWordEl = null; // track which span opened popup
+
+function initCardLongPress() {
+  const area = document.getElementById('review-area');
+  if (!area) return;
+  // Use click (tap) for instant response — no long-press delay needed
+  area.addEventListener('click', onWordClick);
+}
+
+function onWordClick(e) {
+  // Don't intercept clicks on buttons/controls
+  if (e.target.closest('button') || e.target.closest('.review-controls') || e.target.closest('.audio-source-row')) return;
+  const span = e.target.closest('.tappable-word');
+  if (!span) return;
+  e.stopPropagation(); // don't flip card
+  // toggle: if same word clicked again, close
+  if (popupWordEl === span && popupEl) { closeWordPopup(); return; }
+  popupWordEl = span;
+  const word = span.dataset.word;
+  const lang = span.dataset.lang;
+  const rect = span.getBoundingClientRect();
+  showWordPopup(word, lang, rect);
+}
+
+async function showWordPopup(word, lang, rect) {
+  closeWordPopup();
+
+  popupEl = document.createElement('div');
+  popupEl.className = 'word-popup';
+  popupEl.dataset.word = word;
+  popupEl.innerHTML = `
+    <button class="word-popup-close" onclick="closeWordPopup()">✕</button>
+    <div class="word-popup-word">${esc(word)}</div>
+    <div class="word-popup-phonetic" id="popup-ipa" style="color:var(--mist);font-size:13px;margin-bottom:4px;min-height:18px;"></div>
+    <div class="word-popup-zh" id="popup-zh" style="white-space:pre-line;">翻译中…</div>
+    <div class="word-popup-actions" style="margin-top:10px;">
+      ${lang === 'en' ? '<button class="word-popup-speak" id="popup-speak-btn">🔊 朗读</button>' : ''}
+      <button class="word-popup-add" id="popup-add-btn">＋ 加入词库</button>
+    </div>`;
+  document.body.appendChild(popupEl);
+
+  // Bind buttons via JS — no inline onclick, avoids quoting issues
+  const speakBtn = document.getElementById('popup-speak-btn');
+  if (speakBtn) speakBtn.onclick = () => speakEN(word);
+
+  const addBtn = document.getElementById('popup-add-btn');
+  if (addBtn) addBtn.onclick = () => addFromPopup(word, lang);
+
+  // Position popup
+  const pw = 256;
+  let top = rect.top - 160;
+  let left = rect.left + rect.width / 2 - pw / 2;
+  if (top < 10) top = rect.bottom + 10;
+  top = Math.max(10, Math.min(top, window.innerHeight - 180));
+  left = Math.max(10, Math.min(left, window.innerWidth - pw - 10));
+  popupEl.style.top = top + 'px';
+  popupEl.style.left = left + 'px';
+  popupEl.style.width = pw + 'px';
+
+  // Close on outside click (delayed so this click doesn't immediately close)
+  setTimeout(() => {
+    document.addEventListener('click', outsidePopupClick);
+    document.addEventListener('touchstart', outsidePopupClick);
+  }, 80);
+
+  // Auto-speak English immediately
+  if (lang === 'en') speakEN(word);
+
+  // Fetch phonetic + translation in parallel
+  const [phonetic, translation] = await Promise.all([
+    lang === 'en' ? fetchPhonetic(word) : Promise.resolve(null),
+    translateWord(word, lang)
+  ]);
+
+  const ipaEl = document.getElementById('popup-ipa');
+  if (ipaEl && phonetic) ipaEl.textContent = phonetic;
+
+  const zhEl = document.getElementById('popup-zh');
+  if (zhEl) {
+    if (translation) {
+      // Show main translation + dict entries on separate lines
+      const lines = translation.split('\n');
+      zhEl.innerHTML = `<span style="color:var(--gold);font-size:15px;">${esc(lines[0])}</span>` +
+        (lines.slice(1).length ? '<br><span style="font-size:11px;color:var(--mist);">' + lines.slice(1).map(esc).join('<br>') + '</span>' : '');
+    } else {
+      zhEl.textContent = '（未找到翻译）';
+    }
+  }
+}
+
+async function fetchPhonetic(word) {
+  try {
+    const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word.toLowerCase()));
+    if (!r.ok) return null;
+    const d = await r.json();
+    // Find first phonetic with text
+    const phonetics = d?.[0]?.phonetics || [];
+    const p = phonetics.find(p => p.text) || {};
+    return p.text || d?.[0]?.phonetic || null;
+  } catch { return null; }
+}
+
+function outsidePopupClick(e) {
+  if (popupEl && !popupEl.contains(e.target) && !e.target.closest('.tappable-word')) {
+    closeWordPopup();
+  }
+}
+
+function closeWordPopup() {
+  if (popupEl) { popupEl.remove(); popupEl = null; }
+  popupWordEl = null;
+  document.removeEventListener('click', outsidePopupClick);
+  document.removeEventListener('touchstart', outsidePopupClick);
+}
+
+async function translateWord(word, lang) {
+  try {
+    const from = lang === 'en' ? 'en' : 'zh-CN';
+    const to   = lang === 'en' ? 'zh-CN' : 'en';
+    const r = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&dt=bd&q=` + encodeURIComponent(word)
+    );
+    const d = await r.json();
+    const main = (d?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || '').trim();
+    // Also grab dict meanings if available
+    const dictEntries = d?.[1] || [];
+    const extras = [];
+    for (const entry of dictEntries) {
+      const pos = posZH(entry[0] || '');
+      const ws = (entry[1] || []).slice(0, 3).join('、');
+      if (ws) extras.push(`[${pos}] ${ws}`);
+      if (extras.length >= 2) break;
+    }
+    return extras.length ? main + '\n' + extras.join('\n') : main;
+  } catch { return null; }
+}
+
+async function addFromPopup(word, lang) {
+  closeWordPopup();
+  if (lang === 'en') {
+    // Translate to get Chinese
+    const zh = await translateWord(word, 'en');
+    const cleanZh = zh ? zh.split('\n')[0] : word;
+    doAddWord(word, cleanZh, true);
+    saveData(words);
+    updateStats();
+    showToast('✓ 已加入词库：' + word);
+  } else {
+    // Chinese word — translate to English
+    const en = await translateWord(word, 'zh');
+    const cleanEn = en ? en.split('\n')[0] : word;
+    doAddWord(cleanEn, word, true);
+    saveData(words);
+    updateStats();
+    showToast('✓ 已加入词库：' + cleanEn);
+  }
+}
+
+function openInlineEdit(id) {
+  const w = words.find(w => w.id === id);
+  if (!w) return;
+  const bar = document.getElementById('inline-edit-bar');
+  if (!bar) return;
+  document.getElementById('iedit-en').value = w.en;
+  document.getElementById('iedit-zh').value = w.zh;
+  bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveInlineEdit(id) {
+  const en = document.getElementById('iedit-en').value.trim();
+  const zh = document.getElementById('iedit-zh').value.trim();
+  if (!en || !zh) { showToast('内容不能为空'); return; }
+  const w = words.find(w => w.id === id);
+  if (w) { w.en = en; w.zh = zh; saveData(words); }
+  document.getElementById('inline-edit-bar').style.display = 'none';
+  showToast('✓ 已保存');
+  // Re-render card to show updated text
+  renderReviewCard();
+}
+
+function deleteFromReview(id) {
+  if (!confirm('确认从词库删除这个词汇？')) return;
+  // Remove from words array
+  words = words.filter(w => w.id !== id);
+  saveData(words);
+  // Remove from current review queue too
+  const qIdx = reviewQueue.findIndex(w => w.id === id);
+  if (qIdx !== -1) {
+    reviewQueue.splice(qIdx, 1);
+    if (reviewIdx > qIdx) reviewIdx--;
+  }
+  updateStats();
+  showToast('已删除');
+  renderReviewCard();
+}
+
+// ══════════════════════════════════════════
+// ZH → EN SEARCH
+// ══════════════════════════════════════════
+async function searchEnByZh() {
+  const zh = document.getElementById('zhSearchInput').value.trim();
+  if (!zh) { showToast('请输入中文词汇'); return; }
+
+  const status = document.getElementById('zhSearchStatus');
+  const results = document.getElementById('zhSearchResults');
+  status.textContent = '搜索中…';
+  results.innerHTML = '';
+
+  // Use MyMemory to get English→Chinese reversed (zh→en)
+  // Then also use Google Translate reverse
+  let candidates = [];
+
+  try {
+    // Primary: MyMemory zh→en
+    const r1 = await fetch(
+      'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(zh) + '&langpair=zh|en'
+    );
+    const d1 = await r1.json();
+    // Main translation
+    const mainEn = (d1?.responseData?.translatedText || '').trim();
+    if (mainEn && /[a-zA-Z]/.test(mainEn)) {
+      candidates.push({ en: mainEn, zh: zh, pos: '主要译法' });
+    }
+    // Alternative matches from matches array
+    const matches = d1?.matches || [];
+    for (const m of matches) {
+      const t = (m.translation || '').trim();
+      if (t && /[a-zA-Z]/.test(t) && !candidates.find(c => c.en.toLowerCase() === t.toLowerCase())) {
+        candidates.push({ en: t, zh: m.segment || zh, pos: m.subject || '相关译法' });
+      }
+      if (candidates.length >= 8) break;
+    }
+  } catch(e) {}
+
+  // Secondary: Google Translate zh→en for additional candidates
+  try {
+    const r2 = await fetch(
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&dt=bd&q=' + encodeURIComponent(zh)
+    );
+    const d2 = await r2.json();
+    // Main translation
+    const mainEn2 = (d2?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || '').trim();
+    if (mainEn2 && /[a-zA-Z]/.test(mainEn2) && !candidates.find(c => c.en.toLowerCase() === mainEn2.toLowerCase())) {
+      candidates.push({ en: mainEn2, zh: zh, pos: 'Google译法' });
+    }
+    // bd field = dictionary entries with multiple options
+    const dict = d2?.[1] || [];
+    for (const entry of dict) {
+      const pos = entry[0] || '';     // part of speech e.g. "adjective"
+      const words = entry[1] || [];   // array of English words
+      for (const w of words.slice(0, 4)) {
+        if (w && /[a-zA-Z]/.test(w) && !candidates.find(c => c.en.toLowerCase() === w.toLowerCase())) {
+          candidates.push({ en: w, zh: zh, pos: posZH(pos) });
+        }
+      }
+      if (candidates.length >= 12) break;
+    }
+  } catch(e) {}
+
+  if (!candidates.length) {
+    status.textContent = '⚠ 没有找到结果，请换个词试试';
+    return;
+  }
+
+  status.textContent = `找到 ${candidates.length} 个候选，点击选入：`;
+
+  // De-duplicate and render
+  const seen = new Set();
+  const unique = candidates.filter(c => {
+    const k = c.en.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+
+  const alreadyAdded = new Set(words.map(w => w.en.toLowerCase()));
+
+  // Store in global so click handlers can access safely
+  window._zhCandidates = unique;
+
+  results.innerHTML = '<div class="en-candidates">' +
+    unique.map((c, i) => {
+      const added = alreadyAdded.has(c.en.toLowerCase());
+      return `<div class="en-candidate ${added ? 'already-added' : ''}" data-idx="${i}">
+        <div style="flex:1;min-width:0;">
+          <div class="en-candidate-word">${esc(c.en)}</div>
+        </div>
+        <span class="en-candidate-pos">${esc(c.pos)}</span>
+        <button class="btn-icon" data-action="speak" data-idx="${i}" title="试听">🔊</button>
+        <button class="en-candidate-add" data-action="select" data-idx="${i}">
+          ${added ? '✓ 已添加' : '＋ 选用'}
+        </button>
+      </div>`;
+    }).join('') +
+  '</div>';
+
+  // Single delegated listener — avoids all quoting issues
+  results.onclick = function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.idx);
+    const c = window._zhCandidates[idx];
+    if (!c) return;
+    if (btn.dataset.action === 'speak') {
+      e.stopPropagation();
+      stopAllAudio();
+      speakEN(c.en);
+    } else if (btn.dataset.action === 'select') {
+      selectCandidate(c.en, c.zh);
+    }
+  };
+}
+
+function posZH(pos) {
+  const map = { adjective:'形容词', noun:'名词', verb:'动词', adverb:'副词',
+    conjunction:'连词', preposition:'介词', pronoun:'代词', interjection:'感叹词', article:'冠词' };
+  return map[pos] || pos || '相关译法';
+}
+
+function selectCandidate(en, zh) {
+  document.getElementById('addEn').value = en;
+  document.getElementById('addZh').value = zh;
+  setTranslateStatus('');
+  document.getElementById('addEn').scrollIntoView({ behavior:'smooth', block:'center' });
+  document.getElementById('addEn').focus();
+  scheduleAutoTranslate();
+  showToast('已选入「' + en + '」，确认中文后点添加');
+}
+
+// ══════════════════════════════════════════
+// STATS & BADGES
+// ══════════════════════════════════════════
+function updateStats() {
+  const dueEN = words.filter(w => isDueToday(w,'en') && !todayDone.has(doneKey(w.id,'en'))).length;
+  const dueZH = words.filter(w => isDueToday(w,'zh') && !todayDone.has(doneKey(w.id,'zh'))).length;
+  document.getElementById('statTotal').textContent = words.length;
+  document.getElementById('statDueEN').textContent = dueEN;
+  document.getElementById('statDueZH').textContent = dueZH;
+  document.getElementById('statDone').textContent = todayDone.size;
+  const bEN = document.getElementById('badge-en');
+  const bZH = document.getElementById('badge-zh');
+  if (bEN) bEN.textContent = dueEN;
+  if (bZH) bZH.textContent = dueZH;
+}
+
+// ══════════════════════════════════════════
+// WORD LIST
+// ══════════════════════════════════════════
+function renderWordList() {
+  const list = document.getElementById('wordList');
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filter = document.getElementById('filterSelect').value;
+  let filtered = words.slice();
+  if (q) filtered = filtered.filter(w => w.en.toLowerCase().includes(q) || w.zh.includes(q) || w.zh.toLowerCase().includes(q));
+  if (filter === 'today') filtered = filtered.filter(w => isDueToday(w,'en') || isDueToday(w,'zh'));
+  if (filter === 'new') filtered = filtered.filter(w => (w.stageEN||0) === 0 && (w.stageZH||0) === 0);
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--mist);font-size:14px;">暂无词汇</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(w => {
+    const dueEN = getDueDate(w,'en');
+    const dueZH = getDueDate(w,'zh');
+    const labelEN = !dueEN ? '✓ 掌握' : (dueEN <= today() ? '今日' : (dueEN === addDays(today(),1) ? '明天' : dueEN));
+    const labelZH = !dueZH ? '✓ 掌握' : (dueZH <= today() ? '今日' : (dueZH === addDays(today(),1) ? '明天' : dueZH));
+    return `<div>
+      <div class="word-item" id="item-${w.id}">
+        <div class="word-item-en">${esc(w.en)}</div>
+        <div class="word-item-zh">${esc(w.zh)}</div>
+        <div class="word-item-stages">
+          <span class="stage-pill pill-en">英→中 ${labelEN}</span>
+          <span class="stage-pill pill-zh">中→英 ${labelZH}</span>
+        </div>
+        <div class="word-actions">
+          <button class="btn-icon" onclick="speakWord('${w.id}','${escStr(w.en)}')" title="朗读">🔊</button>
+          <button class="btn-icon" onclick="openRecordModal('${w.id}','${escStr(w.en)}')" title="录音" style="${hasRecording(w.id)?'color:var(--gold)':''}">🎙</button>
+          <button class="btn-icon" onclick="toggleEdit('${w.id}')" title="编辑">✏</button>
+          <button class="btn-icon" onclick="deleteWord('${w.id}')" title="删除" style="color:#e07050;">✕</button>
+        </div>
+      </div>
+      <div class="edit-inline" id="edit-${w.id}">
+        <div class="edit-row">
+          <input type="text" id="edit-en-${w.id}" value="${escStr(w.en)}" placeholder="英文">
+          <input type="text" id="edit-zh-${w.id}" value="${escStr(w.zh)}" placeholder="中文">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="saveEdit('${w.id}')">保存</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEdit('${w.id}')">取消</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEdit(id) { document.getElementById('edit-' + id).classList.toggle('open'); }
+function saveEdit(id) {
+  const en = document.getElementById('edit-en-' + id).value.trim();
+  const zh = document.getElementById('edit-zh-' + id).value.trim();
+  if (!en || !zh) { showToast('内容不能为空'); return; }
+  updateWord(id, en, zh);
+  document.getElementById('edit-' + id).classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+// BULK IMPORT
+// ══════════════════════════════════════════
+let importParsed = [];
+
+function handleFileImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { document.getElementById('importText').value = ev.target.result; previewImport(); };
+  r.readAsText(file);
+}
+
+function parseImportText(text) {
+  return text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+    let en = '', zh = '';
+    if (line.includes('=')) [en, zh] = line.split('=').map(s => s.trim());
+    else if (line.includes('，')) [en, zh] = line.split('，').map(s => s.trim());
+    else if (line.includes(',')) [en, zh] = line.split(',').map(s => s.trim());
+    else if (line.includes('\t')) [en, zh] = line.split('\t').map(s => s.trim());
+    else en = line;
+    return en ? { en, zh: zh || '' } : null;
+  }).filter(Boolean);
+}
+
+function previewImport() {
+  const text = document.getElementById('importText').value;
+  importParsed = parseImportText(text);
+  const c = document.getElementById('importPreview');
+  if (!importParsed.length) { c.innerHTML = ''; return; }
+  c.innerHTML = `<div style="font-size:12px;color:var(--mist);margin-bottom:8px;">解析到 ${importParsed.length} 条：</div>` +
+    importParsed.slice(0,20).map(item => `
+      <div class="preview-item">
+        <div class="preview-item-en">${esc(item.en)}</div>
+        <div class="preview-item-zh">${item.zh ? esc(item.zh) : '<span style="color:var(--gold);font-size:10px;">待翻译</span>'}</div>
+      </div>`).join('') +
+    (importParsed.length > 20 ? `<div style="color:var(--mist);font-size:11px;text-align:center;padding:8px;">… 还有 ${importParsed.length-20} 条</div>` : '');
+}
+
+async function confirmImport() {
+  if (!importParsed.length) { previewImport(); if (!importParsed.length) { showToast('请先输入词汇内容'); return; } }
+  const needsTrans = importParsed.filter(i => !i.zh);
+  showToast(`导入中，共${importParsed.length}条${needsTrans.length ? `（${needsTrans.length}条翻译中）` : ''}…`);
+  for (const item of needsTrans) {
+    try {
+      const enc = encodeURIComponent(item.en);
+      const r = await fetch(
+        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=' + enc,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      const d = await r.json();
+      const zh = (d?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || '').trim();
+      item.zh = (zh && /[一-鿿]/.test(zh)) ? zh : item.en;
+    } catch {
+      try {
+        const r2 = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(item.en) + '&langpair=en|zh-CN');
+        const d2 = await r2.json();
+        const zh2 = (d2?.responseData?.translatedText || '').trim();
+        item.zh = (zh2 && /[一-鿿]/.test(zh2)) ? zh2 : item.en;
+      } catch { item.zh = item.en; }
+    }
+  }
+  let added = 0;
+  for (const item of importParsed) { if (item.en && item.zh) { doAddWord(item.en, item.zh, true); added++; } }
+  saveData(words);
+  updateStats(); renderWordList();
+  document.getElementById('importText').value = '';
+  document.getElementById('importPreview').innerHTML = '';
+  importParsed = [];
+  showToast(`✓ 成功导入 ${added} 个词汇（已进入双向复习计划）`);
+}
+
+// drag & drop
+const drop = document.getElementById('importDrop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) { const r = new FileReader(); r.onload = ev => { document.getElementById('importText').value = ev.target.result; previewImport(); }; r.readAsText(file); }
+});
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+function saveSettings() {
+  settings.dailyNew = parseInt(document.getElementById('setDailyNew').value) || 10;
+  saveSettingsData(settings);
+}
+function toggleSetting(key) {
+  settings[key] = !settings[key];
+  saveSettingsData(settings);
+  renderSettingsUI();
+}
+function renderSettingsUI() {
+  document.getElementById('setDailyNew').value = settings.dailyNew;
+  document.getElementById('toggleAutoPlay').className = 'toggle' + (settings.autoPlay ? ' on' : '');
+  renderScheduleGrid();
+}
+function renderScheduleGrid() {
+  const grid = document.getElementById('scheduleGrid');
+  if (!grid) return;
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(today(), i);
+    const countEN = words.filter(w => getDueDate(w,'en') === d).length;
+    const countZH = words.filter(w => getDueDate(w,'zh') === d).length;
+    const total = countEN + countZH;
+    const label = i === 0 ? '今天' : ['日','一','二','三','四','五','六'][new Date(d+'T12:00:00').getDay()];
+    days.push({ label, total });
+  }
+  const max = Math.max(...days.map(d => d.total), 1);
+  grid.innerHTML = days.map(d => `
+    <div class="sched-bar">
+      <div class="sched-num">${d.total}</div>
+      <div class="sched-count-bar" style="height:${Math.max(4, d.total/max*56)}px;"></div>
+      <div class="sched-day">${d.label}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// DATA MANAGEMENT
+// ══════════════════════════════════════════
+function exportData() {
+  const blob = new Blob([JSON.stringify(words, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'memory-palace-words.json'; a.click();
+}
+function importJSONData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (Array.isArray(imported)) {
+        const valid = imported.filter(w => w.en && w.zh).map(w => ({
+          ...w,
+          stageEN: w.stageEN ?? w.stage ?? 0,
+          stageZH: w.stageZH ?? w.stage ?? 0,
+          learnedDateEN: w.learnedDateEN ?? w.learnedDate ?? today(),
+          learnedDateZH: w.learnedDateZH ?? w.learnedDate ?? today(),
+          createdAt: w.createdAt ?? today()
+        }));
+        words = [...words, ...valid];
+        saveData(words); updateStats(); renderWordList();
+        showToast('✓ 导入 ' + valid.length + ' 条');
+      }
+    } catch { showToast('文件格式错误'); }
+  };
+  r.readAsText(file);
+}
+function clearAllData() {
+  if (!confirm('确认删除所有词汇数据？此操作不可恢复！')) return;
+  words = []; saveData(words);
+  todayDone = new Set(); saveTodayDone(todayDone);
+  updateStats(); renderWordList(); buildAndRenderReview(); showToast('已清空');
+}
+
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'review') { updateStats(); buildAndRenderReview(); }
+  if (name === 'list') renderWordList();
+  if (name === 'settings') renderSettingsUI();
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escStr(s) {
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──
+function init() {
+  updateStats();
+  buildAndRenderReview();
+}
+init();
+</script>
+</body>
+</html>
